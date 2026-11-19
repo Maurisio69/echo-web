@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Echo · corto para el stand</title>
 <style>
 @font-face { font-family: "Pixelify Sans"; src: url("fonts/pixelify-sans-latin-700-normal.woff2") format("woff2"); font-weight: 700; }
@@ -202,6 +203,19 @@ html, body { margin: 0; background: #000; }
   window.__seek = function (t) { document.getAnimations().forEach(function (a) { a.pause(); a.currentTime = t * 1000; }); };
   if (location.hash === "#export") window.__seek(0);
   window.__listo = true;
+})();
+</script>
+<script>
+// En pantallas chicas (celular) reduce el escenario de 1920x1080 para que quepa completo a lo ancho y alto.
+(function () {
+  var st = document.getElementById("stage");
+  function ajustar() {
+    var chico = window.innerWidth < 900;
+    st.style.zoom = chico ? Math.min(window.innerWidth / 1920, window.innerHeight / 1080) : "";
+  }
+  ajustar();
+  window.addEventListener("resize", ajustar);
+  window.addEventListener("orientationchange", ajustar);
 })();
 </script>
 </body>

@@ -268,6 +268,65 @@ section[hidden] { display: none; }
 main, .bar { position: relative; z-index: 2; }
 .bar { position: sticky; }
 
+/* MÓVIL (≤ 600 px): barra en dos filas, textos y globos más chicos, menos espacio entre bloques */
+@media (max-width: 600px) {
+  main { padding: 22px 14px 130px; }
+  .bar { padding: 8px 10px; gap: 6px 8px; }
+  .logo { font-size: 1.35rem; padding: 0 4px 0 0; }
+  .hud { font-size: 1rem; padding: 1px 6px; }
+  .hud img { width: 18px; height: 18px; }
+  .worldbtn { font-size: .8rem; padding: 4px 8px; }
+  .tabs { order: 3; width: 100%; margin-right: 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { flex: 0 0 auto; padding: 6px 9px; font-size: .95rem; }
+  h2 { font-size: clamp(1.9rem, 9vw, 2.6rem); }
+  h3 { font-size: 1.2rem; }
+  .head { margin-bottom: 18px; }
+  .logo-big { font-size: clamp(4rem, 26vw, 6.2rem); text-shadow: 4px 4px 0 var(--dark); }
+  .sub { font-size: 1.05rem; margin: 10px 0 20px; }
+  .menu button { font-size: 1.3rem; }
+  .monitor { margin-top: 40px; box-shadow: 5px 5px 0 var(--dark); }
+  .onmon { left: 8px; }
+  .onmon .bubble { max-width: 190px; font-size: .9rem; margin-bottom: 40px; }
+  .say { flex-direction: column; align-items: flex-start; gap: 10px; margin: 6px 0 20px; }
+  .say .bubble { max-width: 100%; margin-bottom: 0; font-size: 1rem; }
+  .quest { grid-template-columns: 30px 1fr; gap: 10px; padding: 12px; }
+  .quest .xp { grid-column: 2; }
+  .map { box-shadow: 5px 5px 0 var(--dark); }
+  .frame { height: 250px; }
+  .frame .zone { font-size: .85rem; }
+  .hot { width: 28px; height: 28px; font-size: 1.1rem; }
+  .pop { width: 74%; font-size: .9rem; padding: 8px; }
+  .pop h3 { font-size: 1.05rem; }
+  .pop .x { top: -12px; right: -8px; width: 28px; height: 28px; }
+  .hint { font-size: .9rem; }
+  .row2 { margin-top: 44px; gap: 20px; }
+  .shelf { margin-top: 50px; }
+  .shelf .line { gap: 10px; }
+  .panel { height: 240px; }
+  .panel .bubble { max-width: 72%; font-size: .9rem; }
+  .panel .sfx { font-size: 1.7rem; }
+  .sticker { font-size: .9rem; padding: 3px 8px; }
+  .moral { margin-top: 28px; }
+  .level { height: 330px; }
+  #lvlBubble { width: 230px; }
+  .medals { margin-top: 40px; gap: 10px; }
+  .medal { flex: 1 1 100%; }
+  .inside { margin-top: 44px; gap: 22px; }
+  .plantbox { flex-direction: column; align-items: stretch; gap: 12px; }
+  .paleta img { min-width: 360px; }
+  .counter b { font-size: 2.4rem; }
+  .statgrid { margin-top: 30px; gap: 18px; }
+  .chart { padding: 14px; }
+  .chart h3 { font-size: 1.1rem; }
+  .foot { flex-direction: column; align-items: stretch; text-align: center; margin-top: 44px; }
+  .navb { width: 100%; padding: 10px 14px; }
+  .progress { height: 46px; }
+  .actor .bubble { white-space: normal; max-width: 150px; font-size: .85rem; }
+  .fall { width: 36px; height: 36px; }
+  #toast { left: 8px; right: 8px; bottom: 8px; }
+  #toast .bubble { max-width: none; font-size: .95rem; }
+}
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
   #roam { display: none; }
