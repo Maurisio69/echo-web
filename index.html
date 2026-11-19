@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="es" data-world="echo">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Echo, espíritu de la naturaleza</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* Plan: la página vive dentro del mundo del juego. Fondo azul de cueva, negro #10071A de la paleta, verde pasto.
+   Pixel font para títulos y menús, letra de cómic para lo que dice Echo. Bordes gruesos y sombras duras de cómic.
+   Fábrica X: óxido y naranja. */
+:root {
+  --bg: #1d2c47;
+  --cave: #3c5a82;
+  --dark: #10071a;
+  --ink: #f4efe1;
+  --muted: #b9c3d6;
+  --grass: #8fd14f;
+  --toxic: #39ff3c;
+  --flag: #d6403f;
+  --gold: #f0c36a;
+  --paper: #fffaf0;
+  --pix: "Pixelify Sans", "Courier New", monospace;
+  --comic: "Comic Neue", "Comic Sans MS", "Trebuchet MS", sans-serif;
+  color-scheme: dark;
+}
+:root[data-world="x"] {
+  --bg: #2a1410;
+  --cave: #7a3524;
+  --grass: #f07a3a;
+  --muted: #d9b9a6;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body {
+  background: var(--bg);
+  background-image: radial-gradient(color-mix(in srgb, var(--cave) 55%, transparent) 1px, transparent 1.4px);
+  background-size: 14px 14px;
+  color: var(--ink); font-family: var(--comic); font-size: 18px; line-height: 1.45;
+  transition: background-color .6s;
+  overflow-x: hidden;
+}
+h1, h2, h3 { font-family: var(--pix); margin: 0; line-height: 1; text-wrap: balance; font-weight: 700; }
+h2 { font-size: clamp(2.2rem, 6vw, 3.6rem); }
+h3 { font-size: 1.4rem; }
+p { margin: 0; }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 3px dashed var(--grass); outline-offset: 3px; }
+img.px, .px { image-rendering: pixelated; }
+.pixel { font-family: var(--pix); }
+
+/* sprites */
+.spr {
+  width: calc(var(--fw) * var(--s) * 1px); height: calc(var(--fh) * var(--s) * 1px);
+  background-repeat: no-repeat; image-rendering: pixelated;
+  background-size: calc(var(--fw) * var(--n) * var(--s) * 1px) calc(var(--fh) * var(--s) * 1px);
+  animation: spr calc(var(--n) / var(--fps) * 1s) steps(var(--n)) infinite;
+}
+@keyframes spr { to { background-position-x: calc(var(--fw) * var(--n) * var(--s) * -1px); } }
+
+/* barra */
+.bar {
+  position: sticky; top: 0; z-index: 30; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 8px 16px; background: var(--dark); border-bottom: 4px solid var(--grass);
+  font-family: var(--pix);
+}
+.logo { background: none; border: 0; font-size: 1.6rem; font-weight: 700; color: var(--grass); padding: 0 6px 0 0; letter-spacing: .04em; }
+.tabs { display: flex; gap: 2px; flex-wrap: wrap; margin-right: auto; }
+.tab { background: none; border: 0; padding: 6px 10px; font-size: 1.05rem; color: var(--muted); }
+.tab:hover { color: var(--ink); }
+.tab[aria-current="true"] { color: var(--dark); background: var(--grass); }
+.hud { display: flex; align-items: center; gap: 6px; font-size: 1.1rem; padding: 2px 10px; border: 2px solid var(--muted); }
+.hud img { width: 22px; height: 22px; }
+.worldbtn { border: 2px solid var(--flag); background: none; color: var(--ink); padding: 5px 10px; font-size: .95rem; }
+.worldbtn:hover { background: var(--flag); }
+
+main { max-width: 1120px; margin: 0 auto; padding: 36px 18px 150px; }
+section[hidden] { display: none; }
+.head { display: flex; align-items: flex-end; gap: 14px; margin-bottom: 26px; flex-wrap: wrap; }
+.tag { font-family: var(--pix); color: var(--grass); font-size: 1rem; display: block; margin-bottom: 8px; }
+.perch { cursor: pointer; display: inline-block; }
+
+/* globos de cómic */
+.bubble {
+  position: relative; background: var(--paper); color: var(--dark); font-family: var(--comic); font-weight: 700;
+  border: 3px solid var(--dark); border-radius: 18px; padding: 10px 14px; box-shadow: 4px 4px 0 var(--dark);
+  font-size: 1.05rem; line-height: 1.3;
+}
+.bubble::after { content: ""; position: absolute; width: 18px; height: 18px; background: var(--paper); border: 3px solid var(--dark); border-top: 0; border-left: 0; }
+.bubble.t-left::after { left: -11px; top: 50%; transform: translateY(-50%) rotate(135deg); }
+.bubble.t-down::after { left: 28px; bottom: -11px; transform: rotate(45deg); }
+.bubble.t-up::after { left: 28px; top: -11px; transform: rotate(-135deg); }
+.bubble.t-right::after { right: -11px; top: 50%; transform: translateY(-50%) rotate(-45deg); }
+.say { display: flex; align-items: flex-end; gap: 16px; margin: 6px 0 26px; }
+.say .bubble { max-width: 560px; margin-bottom: 30px; }
+
+/* INICIO */
+.title-screen { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 36px; align-items: center; }
+@media (max-width: 820px) { .title-screen { grid-template-columns: 1fr; } }
+.logo-big { font-size: clamp(5rem, 15vw, 9.5rem); color: var(--grass); text-shadow: 6px 6px 0 var(--dark); letter-spacing: .03em; }
+.sub { font-size: 1.25rem; margin: 12px 0 26px; max-width: 30ch; }
+.menu { display: flex; flex-direction: column; gap: 2px; font-family: var(--pix); }
+.menu button { background: none; border: 0; text-align: left; font-size: 1.55rem; padding: 4px 0 4px 34px; position: relative; color: var(--muted); }
+.menu button::before { content: "▶"; position: absolute; left: 4px; opacity: 0; color: var(--grass); }
+.menu button:hover, .menu button:focus-visible { color: var(--ink); outline: none; }
+.menu button:hover::before, .menu button:focus-visible::before { opacity: 1; animation: blink .6s steps(2) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.monitor { position: relative; border: 5px solid var(--dark); box-shadow: 8px 8px 0 var(--dark); background: var(--dark); margin-top: 90px; }
+.monitor video { display: block; width: 100%; aspect-ratio: 1570 / 878; object-fit: cover; }
+.monitor .rec { position: absolute; top: 8px; right: 10px; font-family: var(--pix); font-size: .9rem; color: var(--ink); background: var(--flag); padding: 1px 8px; }
+.onmon { position: absolute; left: 22px; bottom: 100%; display: flex; align-items: flex-end; gap: 6px; }
+.onmon .bubble { margin-bottom: 70px; max-width: 280px; font-size: 1rem; }
+.press { margin-top: 30px; font-family: var(--pix); color: var(--muted); animation: blink 1.4s steps(2) infinite; }
+
+/* OBJETIVOS: misiones */
+.quests { display: grid; gap: 10px; max-width: 780px; }
+.quest {
+  display: grid; grid-template-columns: 40px 1fr auto; align-items: center; gap: 14px; text-align: left;
+  background: var(--dark); border: 3px solid var(--cave); padding: 14px 16px; box-shadow: 4px 4px 0 #000;
+}
+.quest:hover { border-color: var(--grass); }
+.quest.main { border-color: var(--gold); }
+.box { width: 30px; height: 30px; border: 3px solid var(--muted); display: grid; place-items: center; font-family: var(--pix); color: var(--dark); font-size: 1.3rem; }
+.quest[aria-pressed="true"] .box { background: var(--grass); border-color: var(--grass); }
+.quest .qt { font-family: var(--pix); font-size: 1.25rem; display: block; }
+.quest .qr { display: none; color: var(--muted); font-size: 1rem; margin-top: 4px; }
+.quest[aria-pressed="true"] .qr { display: block; }
+.quest .xp { font-family: var(--pix); color: var(--gold); font-size: .95rem; white-space: nowrap; }
+.quest[aria-pressed="true"] .xp { color: var(--grass); }
+
+/* DISEÑO: mapa */
+.progress { position: relative; height: 56px; margin-bottom: 4px; }
+.progress .rail { position: absolute; left: 0; right: 0; bottom: 6px; height: 6px; background: repeating-linear-gradient(90deg, var(--muted) 0 10px, transparent 10px 18px); opacity: .5; }
+.progress .runner { position: absolute; bottom: 4px; left: 0; }
+.progress .goal { position: absolute; right: 0; bottom: 6px; }
+.mapwrap { position: relative; }
+.map {
+  display: flex; overflow-x: auto; scroll-snap-type: x proximity; border: 5px solid var(--dark); box-shadow: 8px 8px 0 var(--dark);
+  background: var(--dark); scrollbar-color: var(--grass) var(--dark);
+}
+.frame { position: relative; flex: 0 0 auto; height: clamp(300px, 56vh, 470px); aspect-ratio: 1000 / 559; scroll-snap-align: start; }
+.frame > img { width: 100%; height: 100%; display: block; object-fit: cover; image-rendering: pixelated; }
+.frame .zone { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-family: var(--pix); background: var(--dark); color: var(--ink); padding: 3px 10px; font-size: 1rem; border: 2px solid var(--grass); }
+.hot {
+  position: absolute; width: 32px; height: 32px; transform: translate(-50%, -50%); border: 3px solid var(--dark);
+  background: var(--gold); font-family: var(--pix); font-weight: 700; font-size: 1.3rem; color: var(--dark); display: grid; place-items: center;
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); animation: bob 1.2s ease-in-out infinite; padding: 0;
+}
+.hot:hover, .hot[aria-expanded="true"] { background: var(--grass); }
+@keyframes bob { 50% { transform: translate(-50%, calc(-50% - 6px)); } }
+.pop {
+  position: absolute; top: 50%; transform: translateY(-50%); width: min(320px, 46%); z-index: 4; padding: 10px; font-size: .98rem;
+}
+.pop video { display: block; width: 100%; border: 3px solid var(--dark); margin-bottom: 8px; background: var(--dark); }
+.pop h3 { font-size: 1.15rem; margin-bottom: 4px; }
+.pop .real { margin-top: 8px; padding-top: 6px; border-top: 2px dashed var(--dark); font-weight: 400; }
+.pop .real b { font-family: var(--pix); color: var(--flag); font-weight: 600; }
+.pop .x { position: absolute; top: -14px; right: -14px; width: 30px; height: 30px; border: 3px solid var(--dark); background: var(--flag); color: var(--paper); font-family: var(--pix); padding: 0; line-height: 1; }
+.hint { font-family: var(--pix); color: var(--muted); margin-top: 18px; font-size: 1rem; }
+
+.row2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 26px; margin-top: 70px; }
+.clipcard { position: relative; }
+.clipcard video { display: block; width: 100%; border: 4px solid var(--dark); box-shadow: 6px 6px 0 var(--dark); }
+.sticker { position: absolute; font-family: var(--pix); background: var(--gold); color: var(--dark); padding: 4px 10px; border: 3px solid var(--dark); font-size: 1.05rem; transform: rotate(-4deg); }
+.shelf { margin-top: 80px; }
+.shelf .line { display: flex; align-items: flex-end; justify-content: space-around; flex-wrap: wrap; gap: 18px; padding: 0 10px; }
+.shelf .who { display: flex; flex-direction: column; align-items: center; gap: 4px; background: none; border: 0; }
+.shelf .who span { font-family: var(--pix); font-size: .95rem; color: var(--muted); }
+.ground { height: 22px; margin-top: 6px; background: var(--dark); border-top: 7px solid var(--grass); box-shadow: inset 0 6px 0 color-mix(in srgb, var(--grass) 40%, var(--dark)); }
+
+/* HISTORIA: cómic */
+.comic { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; }
+.panel {
+  position: relative; height: 290px; border: 5px solid var(--dark); box-shadow: 6px 6px 0 var(--dark); overflow: hidden;
+  background: var(--cave) center / cover no-repeat; image-rendering: pixelated; cursor: pointer; padding: 0; text-align: left;
+}
+.panel:nth-child(1) { grid-column: span 4; }
+.panel:nth-child(2) { grid-column: span 2; }
+.panel:nth-child(3) { grid-column: span 3; }
+.panel:nth-child(4) { grid-column: span 3; }
+.panel:nth-child(5) { grid-column: span 2; }
+.panel:nth-child(6) { grid-column: span 4; }
+@media (max-width: 760px) { .comic { grid-template-columns: 1fr; } .panel { grid-column: auto !important; } }
+.panel .cap { position: absolute; top: 0; left: 0; background: var(--gold); color: var(--dark); font-family: var(--comic); font-weight: 700; text-transform: uppercase; font-size: .85rem; padding: 4px 10px; border-right: 4px solid var(--dark); border-bottom: 4px solid var(--dark); }
+.panel .bubble { position: absolute; max-width: 62%; font-size: 1rem; }
+.panel .actor { position: absolute; bottom: 8px; }
+.panel .sfx { position: absolute; font-family: var(--pix); font-weight: 700; font-size: 2.3rem; color: var(--gold); -webkit-text-stroke: 2px var(--dark); text-shadow: 3px 3px 0 var(--dark); transform: rotate(-10deg); pointer-events: none; }
+.panel.boom { animation: boom .45s ease; }
+@keyframes boom { 30% { transform: scale(1.03) rotate(-.6deg); } 60% { transform: scale(.99) rotate(.4deg); } }
+.panel.dim { filter: saturate(.55) brightness(.85); }
+.moral { margin-top: 36px; }
+
+/* DESARROLLO: nivel */
+.level { position: relative; height: 380px; overflow-x: auto; overflow-y: hidden; }
+.level-in { position: relative; height: 100%; min-width: 900px; }
+.plat { position: absolute; width: 130px; background: none; border: 0; padding: 0; }
+.plat .top { height: 26px; background: var(--dark); border-top: 7px solid var(--grass); box-shadow: 4px 4px 0 #000; }
+.plat .lbl { font-family: var(--pix); font-size: .95rem; display: block; text-align: center; margin-top: 6px; color: var(--muted); }
+.plat[aria-current="true"] .lbl { color: var(--grass); }
+.plat .num { position: absolute; top: -30px; left: 50%; transform: translateX(-50%); font-family: var(--pix); color: var(--gold); font-size: 1rem; opacity: .7; }
+#lvlEcho { position: absolute; z-index: 2; pointer-events: none; }
+#lvlBubble { position: absolute; z-index: 3; width: 290px; }
+.medals { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 70px; }
+.medal { display: flex; align-items: center; gap: 12px; background: var(--dark); border: 3px solid var(--cave); padding: 12px 16px; box-shadow: 4px 4px 0 #000; }
+.medal i { width: 34px; height: 34px; border: 3px solid var(--dark); box-shadow: inset -5px -5px 0 rgba(0,0,0,.25), inset 4px 4px 0 rgba(255,255,255,.35); }
+.medal b { font-family: var(--pix); font-size: 1.4rem; display: block; }
+.medal span { color: var(--muted); font-size: .95rem; }
+.inside { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-top: 70px; align-items: start; }
+.states { display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0; }
+.state { font-family: var(--pix); background: var(--dark); border: 2px solid var(--cave); padding: 5px 10px; font-size: .95rem; }
+.state[aria-pressed="true"] { background: var(--grass); color: var(--dark); border-color: var(--grass); }
+.plantbox { display: flex; align-items: flex-end; gap: 16px; }
+.paleta { border: 4px solid var(--dark); box-shadow: 6px 6px 0 var(--dark); background: var(--cave); overflow-x: auto; }
+.paleta img { display: block; width: 100%; min-width: 420px; image-rendering: pixelated; }
+
+/* ESTADÍSTICAS */
+.counters { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+.counter { background: var(--dark); border: 3px solid var(--cave); padding: 14px 16px; box-shadow: 4px 4px 0 #000; }
+.counter b { font-family: var(--pix); font-size: 3rem; color: var(--grass); display: block; line-height: 1; font-variant-numeric: tabular-nums; }
+.counter span { color: var(--muted); font-size: 1rem; }
+.statgrid { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: 26px; margin-top: 50px; align-items: start; }
+@media (max-width: 820px) { .statgrid { grid-template-columns: 1fr; } }
+.pause { background: var(--dark); border: 3px solid var(--cave); padding: 10px; display: flex; flex-direction: column; gap: 2px; font-family: var(--pix); }
+.pause button { background: none; border: 0; text-align: left; padding: 6px 8px 6px 28px; position: relative; color: var(--muted); font-size: 1.05rem; }
+.pause button::before { content: "▶"; position: absolute; left: 6px; opacity: 0; color: var(--grass); }
+.pause button[aria-pressed="true"] { color: var(--ink); }
+.pause button[aria-pressed="true"]::before { opacity: 1; }
+.chart { background: var(--dark); border: 3px solid var(--cave); padding: 20px; box-shadow: 4px 4px 0 #000; }
+.chart h3 { font-size: 1.25rem; line-height: 1.2; margin-bottom: 16px; font-family: var(--comic); }
+.hp { display: grid; grid-template-columns: minmax(110px, 210px) minmax(0, 1fr) 60px; gap: 10px; align-items: center; margin: 10px 0; }
+@media (max-width: 560px) { .hp { grid-template-columns: 1fr 52px; } .hp .l { grid-column: 1 / -1; } }
+.hp .l { font-size: 1rem; }
+.hp .tr { display: flex; flex-direction: column; gap: 4px; }
+.hp .bar2 { height: 18px; border: 2px solid var(--muted); position: relative; }
+.hp .bar2 i { display: block; height: 100%; background: var(--grass); transition: width .5s steps(10); }
+.hp .bar2.b i { background: var(--gold); }
+.hp .bar2::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 2px), var(--dark) calc(10% - 2px) 10%); }
+.hp .v { font-family: var(--pix); text-align: right; display: flex; flex-direction: column; gap: 4px; font-variant-numeric: tabular-nums; }
+.hp .v span { height: 18px; line-height: 18px; }
+.legend { display: flex; gap: 16px; font-family: var(--pix); font-size: .95rem; color: var(--muted); margin-bottom: 6px; }
+.legend i { display: inline-block; width: 12px; height: 12px; background: var(--grass); margin-right: 6px; }
+.legend i.b { background: var(--gold); }
+.chart .say { margin: 18px 0 0; }
+.chart .say .bubble { margin-bottom: 26px; font-size: 1rem; }
+.src { font-family: var(--pix); color: var(--muted); font-size: .9rem; margin-top: 16px; }
+
+/* pie */
+.foot { display: flex; justify-content: space-between; align-items: center; margin-top: 70px; font-family: var(--pix); gap: 12px; }
+.navb { background: var(--dark); border: 3px solid var(--grass); padding: 6px 14px; font-size: 1.05rem; box-shadow: 4px 4px 0 #000; }
+.navb:disabled { opacity: .3; cursor: default; }
+.foot span { color: var(--muted); }
+
+/* actores sueltos */
+#roam { position: fixed; left: 0; right: 0; bottom: 0; height: 140px; pointer-events: none; z-index: 40; overflow: hidden; }
+.actor { position: absolute; bottom: 6px; left: 0; pointer-events: auto; cursor: pointer; }
+.actor .bubble { position: absolute; bottom: 100%; left: 50%; white-space: nowrap; font-size: .9rem; padding: 4px 10px; margin-bottom: 14px; transform: translateX(-30%); }
+.actor .bubble.t-down::after { width: 12px; height: 12px; left: 20px; bottom: -9px; }
+.fall { position: fixed; top: 0; z-index: 41; width: 44px; height: 44px; cursor: pointer; background: none; border: 0; padding: 0; }
+.fall img { width: 100%; height: 100%; image-rendering: pixelated; }
+.plus { position: fixed; z-index: 42; font-family: var(--pix); color: var(--grass); font-size: 1.5rem; pointer-events: none; text-shadow: 2px 2px 0 var(--dark); }
+#toast { position: fixed; left: 16px; bottom: 16px; z-index: 45; display: flex; align-items: flex-end; gap: 6px; pointer-events: none; transition: transform .3s, opacity .3s; transform: translateY(20px); opacity: 0; }
+#toast.on { transform: none; opacity: 1; }
+#toast .bubble { margin-bottom: 36px; max-width: 280px; font-size: .98rem; }
+#smog { position: fixed; inset: 0; pointer-events: none; z-index: 1; opacity: 0; transition: opacity .8s; background: radial-gradient(ellipse at 20% 110%, rgba(80,40,30,.6), transparent 60%), radial-gradient(ellipse at 80% 120%, rgba(60,30,20,.6), transparent 55%); }
+:root[data-world="x"] #smog { opacity: 1; }
+main, .bar { position: relative; z-index: 2; }
+.bar { position: sticky; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+  #roam { display: none; }
+}
+</style>
+</head>
+<body>
+<div id="smog"></div>
+
+<header class="bar">
+  <button class="logo" data-go="inicio" aria-label="Ir al inicio">ECHO</button>
+  <nav class="tabs" aria-label="Apartados">
+    <button class="tab" data-go="objetivos">Objetivos</button>
+    <button class="tab" data-go="diseno">Diseño</button>
+    <button class="tab" data-go="historia">Historia</button>
+    <button class="tab" data-go="desarrollo">Desarrollo</button>
+    <button class="tab" data-go="estadisticas">Estadísticas</button>
+  </nav>
+  <span class="hud" title="Bolsas de basura recogidas"><img class="px" src="assets/bolsa.png" alt="Bolsas"><span id="bags">0</span></span>
+  <button class="worldbtn" id="world" aria-pressed="false">Modo Fábrica X</button>
+</header>
+
+<main>
+
+<!-- INICIO -->
+<section id="inicio" data-title="Inicio">
+  <div class="title-screen">
+    <div>
+      <h1 class="logo-big">ECHO</h1>
+      <p class="sub">El espíritu de la naturaleza contra la Fábrica X. Un plataformero donde todo lo que haces también sirve afuera.</p>
+      <nav class="menu" aria-label="Menú principal">
+        <button data-go="objetivos">Objetivos</button>
+        <button data-go="diseno">Diseño</button>
+        <button data-go="historia">Historia</button>
+        <button data-go="desarrollo">Desarrollo</button>
+        <button data-go="estadisticas">Estadísticas</button>
+      </nav>
+      <p class="press">Atrapa las bolsas de basura que caen</p>
+    </div>
+    <div class="monitor">
+      <div class="onmon">
+        <div class="spr" id="heroEcho" style="--fw:48;--fh:48;--n:12;--s:3;--fps:8;background-image:url('assets/echo_idle.png')" role="img" aria-label="Echo"></div>
+        <div class="bubble t-left">¡Hola! Soy Echo, el espíritu de la naturaleza. Tócame.</div>
+      </div>
+      <video src="assets/v/inicio.mp4" autoplay muted loop playsinline aria-label="Gameplay de Echo"></video>
+      <span class="rec">GAMEPLAY</span>
+    </div>
+  </div>
+</section>
+
+<!-- OBJETIVOS -->
+<section id="objetivos" data-title="Objetivos" hidden>
+  <span class="tag">01 · OBJETIVOS</span>
+  <div class="head"><h2>Mis misiones</h2></div>
+  <div class="say">
+    <div class="spr" style="--fw:48;--fh:48;--n:12;--s:2;--fps:8;background-image:url('assets/echo_idle.png')" role="img" aria-label="Echo"></div>
+    <div class="bubble t-left">Nací en una clase de educación ambiental: nadie sabía qué contamina de verdad. Toca cada misión.</div>
+  </div>
+  <div class="quests" id="quests"></div>
+</section>
+
+<!-- DISEÑO -->
+<section id="diseno" data-title="Diseño" hidden>
+  <span class="tag">02 · DISEÑO</span>
+  <div class="head"><h2>Recorre el nivel</h2></div>
+  <div class="progress" aria-hidden="true">
+    <div class="rail"></div>
+    <div class="runner" id="runner"><div class="spr" id="runSpr" style="--fw:48;--fh:48;--n:12;--s:1;--fps:8;background-image:url('assets/echo_idle.png')"></div></div>
+    <div class="goal"><div class="spr" style="--fw:16;--fh:32;--n:16;--s:1.4;--fps:10;background-image:url('assets/checkpoint.png')"></div></div>
+  </div>
+  <div class="mapwrap"><div class="map" id="map" tabindex="0" aria-label="Mapa del nivel, desplázate hacia la derecha"></div></div>
+  <p class="hint">Desliza el mapa → y toca los rombos amarillos.</p>
+
+  <div class="row2">
+    <div class="clipcard">
+      <video src="assets/v/parkour.mp4" autoplay muted loop playsinline aria-label="Echo saltando"></video>
+      <span class="sticker" style="top:-16px;left:-10px">Salto: 4 bloques</span>
+      <span class="sticker" style="bottom:-14px;right:10px;transform:rotate(3deg)">Pared: me deslizo</span>
+    </div>
+    <div class="clipcard">
+      <video src="assets/v/dash.mp4" autoplay muted loop playsinline aria-label="Echo haciendo dash"></video>
+      <span class="sticker" style="top:-16px;right:-6px;transform:rotate(4deg)">Dash: ~6 bloques</span>
+      <span class="sticker" style="bottom:-14px;left:10px">Todo medido al bloque</span>
+    </div>
+  </div>
+
+  <div class="shelf">
+    <div class="say">
+      <div class="spr" style="--fw:48;--fh:48;--n:12;--s:2;--fps:8;background-image:url('assets/echo_mascara.png')" role="img" aria-label="Echo con máscara"></div>
+      <div class="bubble t-left">Todo en pixel art: retro, ligero y corre hasta en la compu más humilde. Este es mi guardarropa.</div>
+    </div>
+    <div class="line" id="wardrobe"></div>
+    <div class="ground"></div>
+  </div>
+</section>
+
+<!-- HISTORIA -->
+<section id="historia" data-title="Historia" hidden>
+  <span class="tag">03 · HISTORIA</span>
+  <div class="head"><h2>Te lo cuento yo</h2></div>
+  <div class="monitor" style="margin:0 0 40px"><video src="assets/v/corto.mp4" autoplay muted loop playsinline controls aria-label="Corto animado de Echo"></video><span class="rec">CORTO</span></div>
+  <div class="comic" id="comic"></div>
+  <div class="say moral">
+    <div class="spr" style="--fw:48;--fh:48;--n:12;--s:2;--fps:8;background-image:url('assets/echo_idle.png')" role="img" aria-label="Echo"></div>
+    <div class="bubble t-left">Spoiler: todo es una metáfora. Cada problema de mi mundo existe en el tuyo.</div>
+  </div>
+</section>
+
+<!-- DESARROLLO -->
+<section id="desarrollo" data-title="Desarrollo" hidden>
+  <span class="tag">04 · DESARROLLO</span>
+  <div class="head"><h2>Cómo llegué aquí</h2></div>
+  <p class="hint" style="margin:-10px 0 10px">Toca una plataforma y salto.</p>
+  <div class="level"><div class="level-in" id="level">
+    <div id="lvlBubble" class="bubble t-down"></div>
+    <div id="lvlEcho"><div class="spr" style="--fw:48;--fh:48;--n:12;--s:2;--fps:8;background-image:url('assets/echo_idle.png')"></div></div>
+  </div></div>
+
+  <div class="medals">
+    <div class="medal"><i style="background:#d9b13b"></i><div><b>Oro</b><span>Estatal de multimedia</span></div></div>
+    <div class="medal"><i style="background:#b8bfc4"></i><div><b>Plata</b><span>Estatal de multimedia</span></div></div>
+    <div class="medal"><i style="background:#b36a3a"></i><div><b>Bronce</b><span>Iberoamericano de multimedia</span></div></div>
+  </div>
+
+  <div class="inside">
+    <div>
+      <h3>Por dentro: la planta</h3>
+      <div class="states" id="states"></div>
+      <div class="plantbox">
+        <div id="plantSpr"></div>
+        <div class="bubble t-left" id="stateTxt" style="margin-bottom:40px"></div>
+      </div>
+    </div>
+    <div>
+      <h3 style="margin-bottom:12px">Una herramienta que decora sola</h3>
+      <div class="paleta"><img src="assets/paleta_pasto.png" alt="Paleta de pasto del mapa"></div>
+      <p class="hint">Lee la hitbox y pone el pasto correcto en cada borde.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ESTADÍSTICAS -->
+<section id="estadisticas" data-title="Estadísticas" hidden>
+  <span class="tag">05 · ESTADÍSTICAS</span>
+  <div class="head"><h2>Lo que nos dijeron</h2></div>
+  <div class="counters">
+    <div class="counter"><b>53</b><span>universitarios encuestados</span></div>
+    <div class="counter"><b>79.2%</b><span>no contamina, pero no hace algo activo</span></div>
+    <div class="counter"><b>36%</b><span>cree que el agua es lo que más contamina</span></div>
+    <div class="counter"><b>30.8%</b><span>culpa a las empresas después de jugar (antes 13.2%)</span></div>
+  </div>
+  <div class="statgrid">
+    <div class="pause" id="qs" aria-label="Preguntas de la encuesta"></div>
+    <div class="chart" id="chart"></div>
+  </div>
+  <p class="src">Fuente: encuestas del equipo, abril y mayo de 2024.</p>
+</section>
+
+<div class="foot">
+  <button class="navb" id="prev">◀ Anterior</button>
+  <span id="pos"></span>
+  <button class="navb" id="next">Siguiente ▶</button>
+</div>
+</main>
+
+<div id="roam" aria-hidden="true"></div>
+<div id="toast" aria-live="polite"><div class="spr" style="--fw:48;--fh:48;--n:12;--s:1.5;--fps:8;background-image:url('assets/echo_idle.png')"></div><div class="bubble t-left" id="toastTxt"></div></div>
+
+<script>
+(function () {
+  var $ = function (s) { return document.querySelector(s); };
+  var ORDER = ["inicio", "objetivos", "diseno", "historia", "desarrollo", "estadisticas"];
+  var current = "inicio";
+  var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function rnd(a, b) { return a + Math.random() * (b - a); }
+  function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+  function sprHTML(file, fw, fh, n, s, fps, extra) {
+    return '<div class="spr" style="--fw:' + fw + ';--fh:' + fh + ';--n:' + n + ';--s:' + s + ';--fps:' + fps + ';background-image:url(\'assets/' + file + '\');' + (extra || '') + '"></div>';
+  }
+  function el(html) { var d = document.createElement("div"); d.innerHTML = html.trim(); return d.firstChild; }
+
+  /* ---------- navegación ---------- */
+  function show(id, fromHash) {
+    if (ORDER.indexOf(id) < 0) id = "inicio";
+    current = id;
+    ORDER.forEach(function (s) { document.getElementById(s).hidden = s !== id; });
+    document.querySelectorAll(".tab").forEach(function (t) { t.setAttribute("aria-current", t.dataset.go === id ? "true" : "false"); });
+    var i = ORDER.indexOf(id);
+    $("#prev").disabled = i === 0; $("#next").disabled = i === ORDER.length - 1;
+    $("#pos").textContent = (i + 1) + " / " + ORDER.length;
+    if (!fromHash) { try { history.replaceState(null, "", "#" + id); } catch (e) {} }
+    window.scrollTo(0, 0);
+    if (id === "desarrollo") placeLevel(lvl, true);
+    if (id === "diseno") updateRunner();
+  }
+  document.addEventListener("click", function (e) { var b = e.target.closest("[data-go]"); if (b) show(b.dataset.go); });
+  $("#prev").onclick = function () { show(ORDER[Math.max(0, ORDER.indexOf(current) - 1)]); };
+  $("#next").onclick = function () { show(ORDER[Math.min(ORDER.length - 1, ORDER.indexOf(current) + 1)]); };
+  document.addEventListener("keydown", function (e) {
+    if (e.target.closest("input, textarea")) return;
+    if (e.key === "ArrowRight") $("#next").click();
+    if (e.key === "ArrowLeft") $("#prev").click();
+  });
+  window.addEventListener("hashchange", function () { show(location.hash.slice(1), true); });
+
+  /* ---------- modo Fábrica X ---------- */
+  $("#world").onclick = function () {
+    var x = document.documentElement.dataset.world !== "x";
+    document.documentElement.dataset.world = x ? "x" : "echo";
+    this.setAttribute("aria-pressed", x ? "true" : "false");
+    this.textContent = x ? "Volver al bosque" : "Modo Fábrica X";
+    toast(x ? "¡Uy! Aquí hay más arañas. Cuidado." : "Ahh, aire limpio.");
+  };
+
+  /* ---------- toast de Echo ---------- */
+  var toastT;
+  function toast(t) {
+    $("#toastTxt").textContent = t; $("#toast").classList.add("on");
+    clearTimeout(toastT); toastT = setTimeout(function () { $("#toast").classList.remove("on"); }, 3200);
+  }
+  var QUIPS = [
+    "¿Ya cerraste la llave? Bien. Ahora cierra la alcantarilla.",
+    "Shhh… creo que la araña me vio.",
+    "Dato: separar la basura cuenta como cardio.",
+    "Ese botón de Fábrica X me da miedo.",
+    "La composta huele a victoria. Bueno, huele.",
+    "No soy un fantasma. Soy un espíritu. Hay diferencia.",
+    "¿Viste las bolsas que caen? Atrápalas."
+  ];
+  $("#heroEcho").style.cursor = "pointer";
+  $("#heroEcho").onclick = function () { jump(this); toast(pick(QUIPS)); };
+  function jump(node) { if (node.animate) node.animate([{ transform: "translateY(0)" }, { transform: "translateY(-34px)" }, { transform: "translateY(0)" }], { duration: 450, easing: "ease-out" }); }
+
+  /* ---------- Echo encaramado en cada título ---------- */
+  document.querySelectorAll("section .head").forEach(function (h) {
+    var p = el('<span class="perch" title="Echo">' + sprHTML("echo_idle.png", 48, 48, 12, 1.4, 8) + '</span>');
+    p.onclick = function () { jump(p); toast(pick(QUIPS)); };
+    h.appendChild(p);
+  });
+
+  /* ---------- objetivos: misiones ---------- */
+  var QUESTS = [
+    ["Misión principal: que los jóvenes entiendan la contaminación y quieran actuar", "La gente sabe qué hacer, pero no conoce las causas reales.", "★ PRINCIPAL", true],
+    ["Enseñar acciones simples que casi nadie conoce", "Las que más ayudan, más allá de cerrar la llave.", "+1 checkpoint"],
+    ["Llegar a los jóvenes con un videojuego", "Su medio favorito, y el que sabemos hacer.", "+1 checkpoint"],
+    ["No ser el típico juego educativo aburrido", "Poco texto y mecánicas de juegos que sí gustan.", "+1 checkpoint"],
+    ["Que corra en cualquier compu", "Pixel art + Unity = ligero y multiplataforma.", "+1 checkpoint"]
+  ];
+  var qEl = $("#quests"), done = 0;
+  QUESTS.forEach(function (q) {
+    var b = document.createElement("button");
+    b.className = "quest" + (q[3] ? " main" : ""); b.setAttribute("aria-pressed", "false");
+    b.innerHTML = '<span class="box"></span><span><span class="qt"></span><span class="qr"></span></span><span class="xp"></span>';
+    b.querySelector(".qt").textContent = q[0]; b.querySelector(".qr").textContent = q[1]; b.querySelector(".xp").textContent = q[2];
+    b.onclick = function () {
+      var on = b.getAttribute("aria-pressed") !== "true";
+      b.setAttribute("aria-pressed", on ? "true" : "false"); b.querySelector(".box").textContent = on ? "✓" : "";
+      done += on ? 1 : -1;
+      if (on) plus(b.getBoundingClientRect().right - 80, b.getBoundingClientRect().top, "+1");
+      if (done === QUESTS.length) toast("¡Todas las misiones listas! Vámonos.");
+    };
+    qEl.appendChild(b);
+  });
+  function plus(x, y, t) {
+    var p = el('<div class="plus">' + t + '</div>'); p.style.left = x + "px"; p.style.top = y + "px"; document.body.appendChild(p);
+    if (p.animate) p.animate([{ transform: "translateY(0)", opacity: 1 }, { transform: "translateY(-40px)", opacity: 0 }], { duration: 900 }).onfinish = function () { p.remove(); };
+    else setTimeout(function () { p.remove(); }, 900);
+  }
+
+  /* ---------- diseño: mapa ---------- */
+  var MAP = [
+    { img: "m_1.jpg", zone: "Zona 1 · El bosque", hs: [
+      { x: 60, y: 29, t: "¡Ese soy yo!", v: "parkour", e: "Corro, salto hasta 4 bloques y hago dash en el aire." },
+      { x: 11, y: 82, t: "Mi inventario", e: "Aquí guardo filtros, bolsas y composta. Nada se tira.", r: "Separar tus residuos es el primer paso." } ] },
+    { img: "m_33.jpg", zone: "Zona 2 · Lluvia ácida", hs: [
+      { x: 55, y: 22, t: "Lluvia ácida", v: "lluvia", e: "El humo de la alcantarilla hace llover ácido. Con la máscara aguanto 10 segundos.", r: "Las emisiones de la industria provocan lluvia ácida." },
+      { x: 26, y: 6, t: "Tiempo de máscara", e: "Si se acaba, la máscara vuelve a su lugar y lo intento otra vez." },
+      { x: 68, y: 49, t: "Una bolsa de basura", e: "¿La gasto ya o la guardo para algo mejor? Tú decides." } ] },
+    { img: "m_41.jpg", zone: "Zona 3 · Agua contaminada", hs: [
+      { x: 15, y: 45, t: "Agua contaminada", v: "tuberia", e: "Esta agua me mata. Con un filtro y 4 tornillos la dejo azulita.", r: "Los desechos de los productos procesados contaminan el agua." },
+      { x: 49, y: 24, t: "Pared", e: "En las paredes solo me deslizo… y de ahí, ¡wall-dash!" } ] },
+    { img: "m_49.jpg", zone: "Zona 4 · Agua limpia", hs: [
+      { x: 51, y: 41, t: "¡Checkpoint!", v: "checkpoint", e: "Limpié el agua y gané una bandera. Hacer el bien me deja avanzar seguro.", r: "Cuidar el entorno tiene beneficios reales." },
+      { x: 60, y: 91, t: "Agua azul", e: "¿Ves? Ya no mata." } ] },
+    { img: "m_57_5.jpg", zone: "Zona 5 · Máquina mala", hs: [
+      { x: 75, y: 33, t: "Máquina de la Fábrica X", v: "maquina", e: "Para apagarla resuelvo un laberinto. Premio: otro checkpoint.", r: "La producción gasta energía de más en toda su línea." } ] },
+    { img: "m_87.jpg", zone: "Zona 6 · La planta", hs: [
+      { x: 75, y: 29, t: "Planta carnívora", v: "planta", e: "Me come y me escupe como resortera. ¡Es un atajo!" } ] },
+    { img: "m_94_5.jpg", zone: "Zona 7 · Centro de acopio", hs: [
+      { x: 15, y: 42, t: "Centro de acopio", v: "acopio", e: "3 inorgánicas = un power-up de plástico reciclado.", r: "Llevar inorgánicos a reciclar les da otra vida." },
+      { x: 52, y: 32, t: "Apuntando…", v: "planta", e: "Aquí ya estoy dentro de la planta. Arrastro, suelto y ¡fiuuu!" } ] },
+    { img: "m_106_5.jpg", zone: "Zona 8 · Compostador", hs: [
+      { x: 29, y: 65, t: "Compostador", v: "compost", e: "3 orgánicas = semillas o fertilizante.", r: "Los orgánicos se vuelven composta, no basura." },
+      { x: 62, y: 19, t: "¡Otra bolsa!", e: "Bolsas por todos lados. Alguien no separa su basura." } ] },
+    { img: "m_117.jpg", zone: "Zona 9 · Tierra infértil", hs: [
+      { x: 62, y: 24, t: "Fertilizar", v: "fertilizar", e: "Primero fertilizo con la jeringa, luego siembro. Resultado: checkpoint.", r: "Los metales pesados de la industria dejan la tierra sin nutrientes." },
+      { x: 60, y: 90, t: "…¿y este?", e: "No sé quién lo dejó entrar. Muy sospechoso." } ] }
+  ];
+  var mapEl = $("#map"), openPop = null;
+  MAP.forEach(function (f) {
+    var fr = el('<div class="frame"><img alt="" loading="lazy"><span class="zone"></span></div>');
+    fr.querySelector("img").src = "assets/v/" + f.img; fr.querySelector("img").alt = f.zone;
+    fr.querySelector(".zone").textContent = f.zone;
+    f.hs.forEach(function (h) {
+      var b = el('<button class="hot" aria-expanded="false">!</button>');
+      b.style.left = h.x + "%"; b.style.top = h.y + "%"; b.setAttribute("aria-label", h.t);
+      b.onclick = function (ev) { ev.stopPropagation(); togglePop(fr, b, h); };
+      fr.appendChild(b);
+    });
+    mapEl.appendChild(fr);
+  });
+  function closePop() { if (openPop) { openPop.pop.remove(); openPop.btn.setAttribute("aria-expanded", "false"); openPop = null; } }
+  function togglePop(fr, btn, h) {
+    var same = openPop && openPop.btn === btn; closePop(); if (same) return;
+    var right = h.x < 50;
+    var p = el('<div class="pop bubble ' + (right ? "t-left" : "t-right") + '"><button class="x" aria-label="Cerrar">×</button>' + (h.v ? '<video autoplay muted loop playsinline></video>' : '') + '<h3></h3><p class="e"></p>' + (h.r ? '<p class="real"><b>En la vida real:</b> <span></span></p>' : '') + '</div>');
+    if (h.v) p.querySelector("video").src = "assets/v/" + h.v + ".mp4";
+    p.querySelector("h3").textContent = h.t; p.querySelector(".e").textContent = h.e;
+    if (h.r) p.querySelector(".real span").textContent = h.r;
+    if (right) p.style.left = "calc(" + h.x + "% + 34px)"; else p.style.right = "calc(" + (100 - h.x) + "% + 34px)";
+    if (right && h.x > 30) { p.style.left = "auto"; p.style.right = "12px"; }
+    if (!right && h.x < 70) { p.style.right = "auto"; p.style.left = "12px"; }
+    p.querySelector(".x").onclick = function (ev) { ev.stopPropagation(); closePop(); };
+    p.onclick = function (ev) { ev.stopPropagation(); };
+    fr.appendChild(p); btn.setAttribute("aria-expanded", "true"); openPop = { pop: p, btn: btn };
+  }
+  document.addEventListener("click", function (e) { if (openPop && !e.target.closest(".pop")) closePop(); });
+
+  // Echo corre en la barra de progreso según el scroll del mapa
+  var runner = $("#runner"), runSpr = $("#runSpr"), runT;
+  function updateRunner() {
+    var max = mapEl.scrollWidth - mapEl.clientWidth, f = max > 0 ? mapEl.scrollLeft / max : 0;
+    var w = runner.parentNode.clientWidth - 70;
+    runner.style.transform = "translateX(" + Math.round(f * w) + "px)";
+  }
+  mapEl.addEventListener("scroll", function () {
+    runSpr.style.backgroundImage = "url('assets/echo_run.png')"; runSpr.style.setProperty("--n", 8); runSpr.style.setProperty("--fps", 12);
+    updateRunner(); clearTimeout(runT);
+    runT = setTimeout(function () { runSpr.style.backgroundImage = "url('assets/echo_idle.png')"; runSpr.style.setProperty("--n", 12); runSpr.style.setProperty("--fps", 8); }, 220);
+  });
+  window.addEventListener("resize", updateRunner);
+
+  // guardarropa
+  [["Normal", "echo_idle.png", 12, 8], ["Corriendo", "echo_run.png", 8, 12], ["Dash", "echo_dash.png", 7, 12], ["Pared", "echo_pared.png", 4, 6], ["Máscara", "echo_mascara.png", 12, 8], ["Botas", "echo_botas.png", 8, 16]].forEach(function (w) {
+    var b = el('<button class="who">' + sprHTML(w[1], 48, 48, w[2], 2, w[3]) + '<span></span></button>');
+    b.querySelector("span").textContent = w[0];
+    b.onclick = function () { jump(b.firstChild); };
+    $("#wardrobe").appendChild(b);
+  });
+
+  /* ---------- historia: cómic ---------- */
+  var PANELS = [
+    { bg: "assets/fondo_cielo.png", cap: "Hace no mucho…", actor: sprHTML("echo_idle.png", 48, 48, 12, 3, 8), ax: "left:44%", b: "Yo vivía tranquilo en mi bosque, lejos de todo.", bx: "top:44px;left:14px", sfx: "Zzz", sx: "top:40px;right:40px" },
+    { bg: "assets/fondo_cielo.png", dim: true, actor: sprHTML("echo_mascara.png", 48, 48, 12, 3, 8), ax: "left:30%", b: "Desperté y… ¿por qué mi ropa cambió de color?", bx: "top:16px;left:12px", sfx: "¿¡EH!?", sx: "bottom:120px;right:14px" },
+    { bg: "assets/v/m_41.jpg", b: "Plantas secas, un lago verde fosforescente… esto no es normal.", bx: "top:16px;right:14px", sfx: "BLUB", sx: "bottom:40px;left:30px" },
+    { bg: "assets/fondo_fabrica.png", cap: "La Fábrica X", actor: sprHTML("arana.png", 96, 48, 6, 2, 8), ax: "right:20px", b: "Todas las pistas llevaban aquí. Una fábrica que produce sin parar.", bx: "top:44px;left:14px", sfx: "BRRRM", sx: "bottom:60px;left:24px" },
+    { bg: "assets/v/m_33.jpg", b: "Filtros, composta, semillas, una máscara…", bx: "bottom:16px;left:12px", sfx: "FSSSH", sx: "top:20px;right:20px" },
+    { bg: "assets/fondo_fabrica.png", dim: true, cap: "Continuará…", actor: sprHTML("echo_run.png", 48, 48, 8, 3, 12), ax: "left:16%", b: "Voy a entrar por la alcantarilla hasta el corazón de la fábrica. ¿Vienes?", bx: "top:44px;right:14px", extra: '<img class="px" src="assets/maquina.png" alt="" style="position:absolute;right:30px;bottom:8px;height:110px">' }
+  ];
+  PANELS.forEach(function (p) {
+    var b = document.createElement("button");
+    b.className = "panel" + (p.dim ? " dim" : ""); b.style.backgroundImage = "url('" + p.bg + "')";
+    b.setAttribute("aria-label", p.b);
+    var h = "";
+    if (p.cap) h += '<span class="cap"></span>';
+    if (p.extra) h += p.extra;
+    if (p.actor) h += '<div class="actor" style="' + p.ax + '">' + p.actor + '</div>';
+    h += '<div class="bubble t-down" style="' + p.bx + '"></div>';
+    if (p.sfx) h += '<span class="sfx" style="' + p.sx + '"></span>';
+    b.innerHTML = h;
+    if (p.cap) b.querySelector(".cap").textContent = p.cap;
+    b.querySelector(".bubble").textContent = p.b;
+    if (p.sfx) b.querySelector(".sfx").textContent = p.sfx;
+    b.onclick = function () { b.classList.remove("boom"); void b.offsetWidth; b.classList.add("boom"); };
+    $("#comic").appendChild(b);
+  });
+
+  /* ---------- desarrollo: nivel ---------- */
+  var STEPS = [
+    ["La clase", "En la prepa investigamos qué contamina más. Las respuestas nos sorprendieron."],
+    ["La encuesta", "La gente sabe qué hacer, pero no conoce las causas reales."],
+    ["La idea", "Primero pensamos en un quiz. Muy aburrido. Mejor un plataformero."],
+    ["Pixel art + Unity", "Ligero, retro y llevable a otras plataformas."],
+    ["Las mecánicas", "Trigger en el mapa → manager → HUD. Así una mecánica nueva no rompe las demás."],
+    ["Los premios", "Oro y plata estatal, bronce iberoamericano. ¡Y vamos por más!"]
+  ];
+  var levelEl = $("#level"), plats = [], lvl = 0;
+  STEPS.forEach(function (s, i) {
+    var b = el('<button class="plat"><span class="num"></span><div class="top"></div><span class="lbl"></span></button>');
+    b.querySelector(".num").textContent = (i + 1);
+    b.querySelector(".lbl").textContent = s[0];
+    b.style.left = (20 + i * 150) + "px"; b.style.bottom = (24 + i * 34) + "px";
+    b.onclick = function () { placeLevel(i); };
+    levelEl.appendChild(b); plats.push(b);
+  });
+  var lvlEcho = $("#lvlEcho"), lvlBubble = $("#lvlBubble");
+  function placeLevel(i, instant) {
+    var from = { x: parseFloat(lvlEcho.style.left) || 0, y: parseFloat(lvlEcho.style.bottom) || 0 };
+    lvl = i;
+    var x = 20 + i * 150 + 17, y = 24 + i * 34 + 33 + 22;
+    plats.forEach(function (p, k) { p.setAttribute("aria-current", k === i ? "true" : "false"); });
+    lvlEcho.style.left = x + "px"; lvlEcho.style.bottom = y + "px";
+    if (!instant && lvlEcho.animate && !reduce) {
+      var peak = Math.max(from.y, y) + 70;
+      lvlEcho.animate([{ left: from.x + "px", bottom: from.y + "px" }, { left: (from.x + x) / 2 + "px", bottom: peak + "px" }, { left: x + "px", bottom: y + "px" }], { duration: 520, easing: "ease-in-out" });
+    }
+    lvlBubble.textContent = STEPS[i][1];
+    lvlBubble.style.left = Math.min(x - 20, levelEl.clientWidth - 300) + "px";
+    lvlBubble.style.bottom = (y + 112) + "px";
+  }
+  placeLevel(0, true);
+
+  var PSTATES = [["Idle", "planta_idle.png", 8, 8, "Esperando a que alguien se acerque."], ["Comiendo", "planta_comiendo.png", 8, 8, "¡ÑAM! Me traga y me esconde."], ["Cargada", "planta_cargada.png", 8, 8, "Mientras apuntas con el mouse, yo estoy aquí dentro."], ["Escupiendo", "planta_escupe.png", 7, 10, "¡FIUUU! Salgo disparado con física real."]];
+  PSTATES.forEach(function (s, i) {
+    var b = el('<button class="state" aria-pressed="false"></button>'); b.textContent = s[0];
+    b.onclick = function () {
+      document.querySelectorAll(".state").forEach(function (o) { o.setAttribute("aria-pressed", o === b ? "true" : "false"); });
+      $("#plantSpr").innerHTML = sprHTML(s[1], 32, 32, s[2], 5, s[3]); $("#stateTxt").textContent = s[4];
+    };
+    $("#states").appendChild(b);
+  });
+  $("#states").firstChild.click();
+
+  /* ---------- estadísticas ---------- */
+  var QS = [
+    { n: "¿Quién es el responsable?", q: "¿Quién crees que es el principal responsable de los problemas ambientales?", rows: [["Empresas e individuos", 56.6], ["Cualquier individuo", 28.3], ["Las empresas", 13.2], ["Empresas, luego la sociedad", 1.9]], e: "Más de la mitad ya sabe que no es culpa de una sola persona." },
+    { n: "¿Ves interés a tu alrededor?", q: "¿Has notado interés de las personas que te rodean por el cuidado ambiental?", rows: [["Sí", 54.7], ["No", 45.3]], e: "Casi la mitad no lo ve. Ahí entro yo." },
+    { n: "¿Haces algo activamente?", q: "¿Activamente haces algo para cuidar el medio ambiente?", rows: [["No, pero procuro no contaminar", 79.2], ["Sí", 17], ["No", 3.8]], e: "8 de cada 10 no contamina… pero tampoco hace algo activo." },
+    { n: "¿Qué contamina más?", q: "¿Qué acción diaria crees que contamina más?", rows: [["Desperdicio de agua", 36], ["Basura", 25], ["Uso del carro", 22], ["Empresas", 10], ["Otros", 7]], e: "Muchos creen que el agua es lo peor. Hay más causas." },
+    { n: "¿Primera acción que piensas?", q: "¿Qué es lo primero que piensas para cuidar el medio ambiente?", rows: [["Cerrar grifos de agua", 41], ["Reciclar", 16], ["No usar auto", 15], ["Ahorrar energía", 10], ["Sanciones a empresas", 10], ["Otros", 8]], e: "Cerrar la llave está bien. Pero hay acciones que ayudan más." },
+    { n: "Antes vs. después de jugar", cmp: true, q: "¿Quién crees que es el principal responsable de los problemas ambientales?", rows: [["Las empresas", 13.2, 30.8], ["Cualquier individuo", 28.3, 15.4], ["Empresas e individuos", 56.6, 53.8]], e: "Después de jugar, más gente señala a las empresas." }
+  ];
+  function pct(v) { return String(Math.round(v * 10) / 10) + "%"; }
+  function drawQ(k) {
+    var d = QS[k], h = "<h3></h3>";
+    if (d.cmp) h += '<div class="legend"><span><i></i>Antes</span><span><i class="b"></i>Después</span></div>';
+    d.rows.forEach(function (r, i) {
+      h += '<div class="hp"><span class="l" data-i="' + i + '"></span><span class="tr"><span class="bar2"><i style="width:' + r[1] + '%"></i></span>' + (d.cmp ? '<span class="bar2 b"><i style="width:' + r[2] + '%"></i></span>' : '') + '</span><span class="v"><span>' + pct(r[1]) + '</span>' + (d.cmp ? '<span>' + pct(r[2]) + '</span>' : '') + '</span></div>';
+    });
+    h += '<div class="say">' + sprHTML("echo_idle.png", 48, 48, 12, 1.5, 8) + '<div class="bubble t-left"></div></div>';
+    var c = $("#chart"); c.innerHTML = h;
+    c.querySelector("h3").textContent = d.q;
+    c.querySelectorAll(".l").forEach(function (n) { n.textContent = d.rows[+n.dataset.i][0]; });
+    c.querySelector(".bubble").textContent = d.e;
+    document.querySelectorAll("#qs button").forEach(function (b, i) { b.setAttribute("aria-pressed", i === k ? "true" : "false"); });
+  }
+  QS.forEach(function (d, k) { var b = el('<button aria-pressed="false"></button>'); b.textContent = d.n; b.onclick = function () { drawQ(k); }; $("#qs").appendChild(b); });
+  drawQ(0);
+
+  /* ---------- Echo y la araña sueltos ---------- */
+  var roam = $("#roam"), bags = 0;
+  function actor(file, fw, fh, n, s, fps, flip, bottom) {
+    var a = el('<div class="actor">' + sprHTML(file, fw, fh, n, s, fps, flip ? "transform:scaleX(-1)" : "") + '</div>');
+    if (bottom) a.style.bottom = bottom + "px";
+    roam.appendChild(a); return a;
+  }
+  function move(a, x0, x1, dur, delay) {
+    var an = a.animate([{ transform: "translateX(" + x0 + "px)" }, { transform: "translateX(" + x1 + "px)" }], { duration: dur, delay: delay || 0, easing: "linear", fill: "both" });
+    an.onfinish = function () { a.remove(); };
+    return an;
+  }
+  function say(a, t, ms) { var b = el('<div class="bubble t-down"></div>'); b.textContent = t; a.appendChild(b); setTimeout(function () { b.remove(); }, ms || 1800); }
+  function echoClick(a, an, flip) {
+    a.onclick = function () {
+      var s = a.querySelector(".spr");
+      s.style.backgroundImage = "url('assets/echo_dash.png')"; s.style.setProperty("--n", 7); s.style.setProperty("--fps", 14);
+      an.playbackRate = 3.2; say(a, "¡DASH!", 800);
+    };
+  }
+  function spiderClick(a, an) { a.onclick = function () { an.playbackRate = 3; say(a, "¡Ups!", 700); }; }
+  var W = function () { return window.innerWidth; };
+  var GAGS = {
+    run: function () { var e = actor("echo_run.png", 48, 48, 8, 1.6, 12); var an = move(e, -90, W() + 90, 6500); echoClick(e, an); },
+    chase: function () {
+      var e = actor("echo_run.png", 48, 48, 8, 1.6, 12), s = actor("arana.png", 96, 48, 6, 1.3, 10, true);
+      var ae = move(e, -90, W() + 260, 5600), as = move(s, -330, W() + 40, 5600);
+      echoClick(e, ae); spiderClick(s, as); setTimeout(function () { if (e.isConnected) say(e, pick(["¡AYUDAAA!", "¡No me comas!", "¡Soy vegano!"]), 1600); }, 1400);
+    },
+    chaseBack: function () {
+      var e = actor("echo_run.png", 48, 48, 8, 1.6, 12, true), s = actor("arana.png", 96, 48, 6, 1.3, 10);
+      var ae = move(e, W() + 30, -320, 5600), as = move(s, W() + 260, -140, 5600);
+      echoClick(e, ae); spiderClick(s, as); setTimeout(function () { if (e.isConnected) say(e, "¡Otra vez tú!", 1500); }, 1500);
+    },
+    hop: function () {
+      var e = actor("echo_run.png", 48, 48, 8, 1.6, 12); var an = move(e, -90, W() + 90, 7200); echoClick(e, an);
+      e.firstChild.animate([{ transform: "translateY(0)" }, { transform: "translateY(-46px)" }, { transform: "translateY(0)" }], { duration: 650, iterations: Infinity, easing: "ease-in-out" });
+    },
+    dash: function () { var e = actor("echo_dash.png", 48, 48, 7, 1.6, 14, false, 50); move(e, -90, W() + 90, 1500); },
+    spider: function () {
+      var s = actor("arana.png", 96, 48, 6, 1.3, 8, true);
+      var mid = W() * rnd(.25, .55);
+      var an = s.animate([{ transform: "translateX(-140px)" }, { transform: "translateX(" + mid + "px)", offset: .45 }, { transform: "translateX(" + mid + "px)", offset: .6 }, { transform: "translateX(-140px)" }], { duration: 7000, easing: "linear" });
+      an.onfinish = function () { s.remove(); }; spiderClick(s, an);
+      setTimeout(function () { if (s.isConnected) say(s, "¿Echo…?", 1300); }, 3300);
+    },
+    peek: function () {
+      var e = actor("echo_idle.png", 48, 48, 12, 1.8, 8, true);
+      e.style.left = "auto"; e.style.right = "0";
+      var an = e.animate([{ transform: "translateX(90px)" }, { transform: "translateX(-10px)", offset: .15 }, { transform: "translateX(-10px)", offset: .85 }, { transform: "translateX(90px)" }], { duration: 5000 });
+      an.onfinish = function () { e.remove(); };
+      setTimeout(function () { if (e.isConnected) { say(e, pick(QUIPS), 3000); var b = e.querySelector(".bubble"); if (b) { b.style.left = "auto"; b.style.right = "10px"; b.style.transform = "none"; } } }, 800);
+      e.onclick = function () { jump(e.firstChild); };
+    },
+    bag: function () {
+      var files = ["bolsa.png", "bolsa.png", "lata.png", "manzana.png"], f = pick(files);
+      var b = el('<button class="fall" aria-label="Recoger basura"><img alt="" src="assets/' + f + '"></button>');
+      b.style.left = rnd(60, W() - 100) + "px"; document.body.appendChild(b);
+      var endY = window.innerHeight - 60;
+      var an = b.animate([{ transform: "translateY(-60px) rotate(0)" }, { transform: "translateY(" + endY + "px) rotate(200deg)" }], { duration: 3800, easing: "ease-in", fill: "forwards" });
+      var gone = setTimeout(function () { b.remove(); }, 9000);
+      b.onclick = function () {
+        clearTimeout(gone); var r = b.getBoundingClientRect(); plus(r.left, r.top - 10, "+1"); b.remove();
+        bags++; $("#bags").textContent = bags;
+        if (bags === 1) toast("¡Bien! Una bolsa menos en el planeta.");
+        else if (bags % 5 === 0) toast(bags + " bolsas. Ya puedes ir al compostador.");
+      };
+    }
+  };
+  function loop() {
+    if (!document.hidden) {
+      var x = document.documentElement.dataset.world === "x";
+      var pool = ["run", "chase", "chaseBack", "hop", "dash", "spider", "peek", "bag", "bag"];
+      if (x) pool = pool.concat(["chase", "chaseBack", "spider", "spider"]);
+      try { GAGS[pick(pool)](); } catch (e) {}
+    }
+    setTimeout(loop, rnd(4500, 9000));
+  }
+  if (!reduce && document.body.animate) { setTimeout(function () { GAGS.chase(); }, 1800); setTimeout(GAGS.bag, 4500); setTimeout(loop, 9000); }
+
+  /* ---------- arranque ---------- */
+  show(location.hash.slice(1) || "inicio", true);
+})();
+</script>
+</body>
+</html>

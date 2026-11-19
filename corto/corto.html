@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Echo · corto para el stand</title>
+<style>
+@font-face { font-family: "Pixelify Sans"; src: url("fonts/pixelify-sans-latin-700-normal.woff2") format("woff2"); font-weight: 700; }
+@font-face { font-family: "Pixelify Sans"; src: url("fonts/pixelify-sans-latin-400-normal.woff2") format("woff2"); font-weight: 400; }
+/* Corto sin diálogo: la historia se entiende con imagen y onomatopeyas. Paleta: azul cueva, negro #10071A, verde pasto, rojo, oro. */
+:root { --dark: #10071a; --grass: #8fd14f; --gold: #f0c36a; --toxic: #39ff3c; --water: #3ec8f0; }
+html, body { margin: 0; background: #000; }
+#stage { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: var(--dark); font-family: "Pixelify Sans", monospace; }
+#world { position: absolute; left: 0; top: 0; width: 5760px; height: 1080px; }
+.abs { position: absolute; }
+.px { image-rendering: pixelated; }
+.bg { position: absolute; top: 0; width: 1920px; height: 1080px; background-size: cover; background-position: center bottom; image-rendering: pixelated; }
+.ground { position: absolute; top: 820px; height: 260px; z-index: 5; background: url("../assets/pasto_top.png") repeat-x 0 0 / 384px 128px, var(--dark); image-rendering: pixelated; }
+.spr { width: calc(var(--fw) * var(--s) * 1px); height: calc(var(--fh) * var(--s) * 1px); background-repeat: no-repeat; image-rendering: pixelated;
+  background-size: calc(var(--fw) * var(--n) * var(--s) * 1px) calc(var(--fh) * var(--s) * 1px);
+  animation: spr calc(var(--n) / var(--fps) * 1s) steps(var(--n)) infinite; }
+@keyframes spr { to { background-position-x: calc(var(--fw) * var(--n) * var(--s) * -1px); } }
+.pool { position: absolute; top: 806px; height: 46px; z-index: 6; border: 6px solid var(--dark); }
+.pool::after { content: ""; position: absolute; left: 20px; right: 20px; top: 8px; height: 6px; background: rgba(255,255,255,.55); animation: ripple 1.2s steps(4) infinite; }
+@keyframes ripple { 50% { left: 60px; right: 80px; } }
+.puddle { position: absolute; top: 812px; height: 22px; z-index: 6; background: var(--toxic); border: 5px solid var(--dark); }
+#rain { position: absolute; left: 3840px; top: 0; width: 1920px; height: 820px; z-index: 7; }
+.drop { position: absolute; width: 6px; height: 28px; background: #8fff6a; box-shadow: 0 0 0 2px rgba(16,7,26,.4); animation: fall .75s linear infinite; }
+@keyframes fall { from { transform: translateY(-80px); } to { transform: translateY(880px); } }
+.smoke { position: absolute; animation: rise 2.4s ease-in-out infinite; }
+@keyframes rise { 0% { transform: translateY(40px) scale(.8); opacity: 0; } 30% { opacity: .9; } 100% { transform: translateY(-300px) scale(1.5); opacity: 0; } }
+.puff { width: 110px; height: 110px; background: #4a4256; border: 6px solid var(--dark); box-shadow: 30px -20px 0 -10px #5d546a, -26px -10px 0 -14px #3a3346; }
+.sfx { position: absolute; z-index: 20; font-weight: 700; font-size: 130px; color: var(--gold); -webkit-text-stroke: 5px var(--dark); paint-order: stroke fill; text-shadow: 8px 8px 0 var(--dark); white-space: nowrap; }
+#iris { position: absolute; z-index: 30; border-radius: 50%; box-shadow: 0 0 0 4000px var(--dark); transform: translate(-50%, -50%); }
+#card { position: absolute; inset: 0; z-index: 31; }
+.logo { position: absolute; left: 0; right: 0; top: 280px; text-align: center; font-size: 300px; font-weight: 700; color: var(--grass); text-shadow: 14px 14px 0 #000; letter-spacing: 12px; }
+#cont { position: absolute; left: 0; right: 0; top: 650px; text-align: center; font-size: 84px; font-weight: 700; color: #fff; text-shadow: 6px 6px 0 #000; }
+#ring { position: absolute; z-index: 9; width: 120px; height: 120px; border-radius: 50%; border: 12px solid var(--grass); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="world">
+    <!-- A: el bosque -->
+    <div class="bg" style="left:0;background-image:url('../assets/fondo_cielo.png')"></div>
+    <div class="ground" style="left:0;width:1920px"></div>
+    <div class="abs" id="plantA" style="left:300px;top:628px;z-index:4"><div class="spr" style="--fw:32;--fh:32;--n:8;--s:6;--fps:8;background-image:url('../assets/planta_idle.png')"></div></div>
+    <div class="pool" id="poolA" style="left:1150px;width:460px;background:var(--water)"></div>
+
+    <!-- B: el camino se ensucia -->
+    <div class="bg" style="left:1920px;background-image:url('../assets/fondo_cielo.png');filter:brightness(.55) saturate(.45) sepia(.35)"></div>
+    <div class="ground" style="left:1920px;width:1920px;filter:saturate(.35) brightness(.75)"></div>
+    <div class="abs" style="left:2250px;top:700px;z-index:4;filter:grayscale(1) brightness(.6);transform:scaleY(.6);transform-origin:50% 100%"><div class="spr" style="--fw:32;--fh:32;--n:8;--s:4;--fps:4;background-image:url('../assets/planta_idle.png')"></div></div>
+    <div class="abs" style="left:3000px;top:700px;z-index:4;filter:grayscale(1) brightness(.6);transform:scaleY(.5) rotate(-8deg);transform-origin:50% 100%"><div class="spr" style="--fw:32;--fh:32;--n:8;--s:4;--fps:4;background-image:url('../assets/planta_idle.png')"></div></div>
+    <div class="puddle" style="left:2500px;width:120px"></div>
+    <div class="puddle" style="left:2800px;width:170px"></div>
+    <div class="puddle" style="left:3250px;width:230px"></div>
+    <div class="puddle" style="left:3620px;width:300px"></div>
+
+    <!-- C: la Fábrica X -->
+    <div class="bg" id="bgC" style="left:3840px;background-image:url('../assets/fondo_fabrica.png');background-position:center"></div>
+    <div class="ground" id="groundC" style="left:3840px;width:1920px;filter:saturate(.2) brightness(.65)"></div>
+    <div class="pool" id="poolC" style="left:4500px;width:400px;background:var(--toxic)"></div>
+    <img class="abs px" id="filtro" src="../assets/filtro.png" style="left:4600px;top:600px;width:200px;z-index:8" alt="">
+    <img class="abs px" src="../assets/alcantarilla.png" style="left:5150px;top:742px;width:160px;z-index:6" alt="">
+    <div id="smokes">
+      <div class="smoke" style="left:5170px;top:600px;z-index:7"><div class="puff"></div></div>
+      <div class="smoke" style="left:5190px;top:600px;z-index:7;animation-delay:-.6s"><div class="puff"></div></div>
+      <div class="smoke" style="left:5160px;top:600px;z-index:7;animation-delay:-1.2s"><div class="puff"></div></div>
+      <div class="smoke" style="left:5200px;top:600px;z-index:7;animation-delay:-1.8s"><div class="puff"></div></div>
+      <div class="smoke" style="left:5150px;top:520px;z-index:7"><div class="spr" style="--fw:16;--fh:16;--n:12;--s:11;--fps:8;background-image:url('../assets/humo.png')"></div></div>
+      <div class="smoke" style="left:5165px;top:470px;z-index:7;animation-delay:-.8s"><div class="spr" style="--fw:16;--fh:16;--n:12;--s:11;--fps:8;background-image:url('../assets/humo.png')"></div></div>
+      <div class="smoke" style="left:5140px;top:420px;z-index:7;animation-delay:-1.6s"><div class="spr" style="--fw:16;--fh:16;--n:12;--s:11;--fps:8;background-image:url('../assets/humo.png')"></div></div>
+    </div>
+    <img class="abs px" id="maq" src="../assets/maquina.png" style="left:5380px;top:628px;width:480px;z-index:4" alt="">
+    <div class="abs" id="plantC" style="left:4280px;top:628px;z-index:4"><div class="spr" style="--fw:32;--fh:32;--n:8;--s:6;--fps:8;background-image:url('../assets/planta_idle.png')"></div></div>
+    <div id="rain"></div>
+
+    <div class="abs" id="spider" style="left:0;top:648px;z-index:8"><div class="spr" style="--fw:96;--fh:48;--n:6;--s:4;--fps:12;background-image:url('../assets/arana.png')"></div></div>
+    <div id="ring"></div>
+
+    <!-- Echo (detrás del suelo para poder meterse a la alcantarilla) -->
+    <div class="abs" id="echo" style="left:0;top:501px;z-index:3">
+      <div id="tint">
+        <div class="abs" id="eIdle"><div class="spr" style="--fw:48;--fh:48;--n:12;--s:7;--fps:8;background-image:url('../assets/echo_idle.png')"></div></div>
+        <div class="abs" id="eRun" style="opacity:0"><div class="spr" style="--fw:48;--fh:48;--n:8;--s:7;--fps:12;background-image:url('../assets/echo_run.png')"></div></div>
+        <div class="abs" id="eJump" style="opacity:0"><img class="px" src="../assets/echo_salto.png" style="width:336px;display:block" alt=""></div>
+        <div class="abs" id="eDash" style="opacity:0"><div class="spr" style="--fw:48;--fh:48;--n:7;--s:7;--fps:14;background-image:url('../assets/echo_dash.png')"></div></div>
+      </div>
+    </div>
+  </div>
+  <div id="fx"></div>
+  <div id="iris"></div>
+  <div id="card">
+    <div class="logo" id="logo">ECHO</div>
+    <div id="cont">Continuará…</div>
+    <div class="abs" id="cSpider" style="left:1560px;top:1080px"><div class="spr" style="--fw:96;--fh:48;--n:6;--s:3.5;--fps:8;background-image:url('../assets/arana.png')"></div></div>
+  </div>
+</div>
+<script>
+(async function () {
+  var T = 31;
+  var SAL = "cubic-bezier(.22,1,.36,1)", REB = "cubic-bezier(.34,1.56,.64,1)", ENT = "cubic-bezier(.55,0,.75,.2)", SUAVE = "cubic-bezier(.65,0,.35,1)";
+  var r2 = function (x) { return Math.round(x * 100) / 100; };
+  function tl(el, frames) {
+    var ks = frames.map(function (f) { var o = Object.assign({}, f); delete o.t; o.offset = Math.min(1, Math.max(0, r2(f.t) / T)); return o; });
+    if (ks[0].offset > 0) { var a = Object.assign({}, ks[0]); a.offset = 0; a.easing = "linear"; ks.unshift(a); }
+    if (ks[ks.length - 1].offset < 1) { var b = Object.assign({}, ks[ks.length - 1]); b.offset = 1; ks.push(b); }
+    ks.forEach(function (k) { if (!k.easing) k.easing = "linear"; });
+    return el.animate(ks, { duration: T * 1000, fill: "both" });
+  }
+  var $ = function (s) { return document.querySelector(s); };
+  // visible solo en los tramos dados: [[t0,t1],[t0,t1]...]
+  function onOff(el, spans, startOn) {
+    var f = [{ t: 0, opacity: startOn ? 1 : 0 }];
+    spans.forEach(function (s) { f.push({ t: s[0] - 0.01, opacity: 0 }, { t: s[0], opacity: 1 }); if (s[1] != null) f.push({ t: s[1] - 0.01, opacity: 1 }, { t: s[1], opacity: 0 }); });
+    if (startOn) f[1] = { t: 0, opacity: 1 };
+    tl(el, f);
+  }
+
+  /* lluvia */
+  var rain = $("#rain");
+  for (var i = 0; i < 70; i++) { var d = document.createElement("div"); d.className = "drop"; d.style.left = (Math.random() * 1900) + "px"; d.style.animationDelay = (-Math.random() * .75) + "s"; d.style.animationDuration = (.6 + Math.random() * .3) + "s"; rain.appendChild(d); }
+
+  /* cámara: sigue a Echo del bosque a la fábrica */
+  tl($("#world"), [{ t: 0, transform: "translateX(0px)" }, { t: 7.6, transform: "translateX(0px)", easing: "ease-in" }, { t: 8.3, transform: "translateX(-500px)" }, { t: 10.3, transform: "translateX(-3500px)", easing: "ease-out" }, { t: 10.9, transform: "translateX(-3840px)" }]);
+
+  /* Echo: recorrido */
+  var P = function (x, y) { return "translate(" + x + "px," + (y || 0) + "px)"; };
+  tl($("#echo"), [
+    { t: 0, transform: P(600) },
+    { t: 3.0, transform: P(600), easing: "ease-out" }, { t: 3.25, transform: P(600, -150), easing: "ease-in" }, { t: 3.5, transform: P(600) },
+    { t: 7.5, transform: P(600) }, { t: 10.8, transform: P(4100) },
+    { t: 13.55, transform: P(4100), easing: "ease-out" }, { t: 13.95, transform: P(4110, -380), easing: "ease-in" }, { t: 14.35, transform: P(4120) },
+    { t: 16.4, transform: P(4120), easing: "ease-out" }, { t: 16.75, transform: P(4500, -300), easing: "ease-in" }, { t: 17.1, transform: P(4880) },
+    { t: 21.8, transform: P(4880) }, { t: 22.3, transform: P(5060) },
+    { t: 22.6, transform: P(5060), easing: "ease-out" }, { t: 22.95, transform: P(5070, -220), easing: "ease-in" }, { t: 23.5, transform: P(5075, 420) }
+  ]);
+  onOff($("#eIdle"), [[0, 3.0], [3.5, 7.5], [10.8, 13.55], [14.35, 16.4], [17.1, 21.8]]);
+  onOff($("#eRun"), [[7.5, 10.8], [21.8, 22.6]]);
+  onOff($("#eJump"), [[3.0, 3.5], [13.55, 13.8], [14.1, 14.35], [16.4, 17.1], [22.6, 23.6]]);
+  onOff($("#eDash"), [[13.8, 14.1]]);
+  // su ropa cambia de color al despertar y sana cuando arregla el mundo
+  tl($("#tint"), [{ t: 0, filter: "hue-rotate(0deg) saturate(1)" }, { t: 3.3, filter: "hue-rotate(0deg) saturate(1)" }, { t: 3.4, filter: "hue-rotate(250deg) saturate(1.6)" }, { t: 20.8, filter: "hue-rotate(250deg) saturate(1.6)", easing: SAL }, { t: 21.3, filter: "hue-rotate(0deg) saturate(1)" }]);
+  // anillo verde al sanar
+  tl($("#ring"), [{ t: 0, opacity: 0, transform: "translate(5000px,600px) scale(.2)" }, { t: 20.8, opacity: 0, transform: "translate(5000px,600px) scale(.2)" }, { t: 20.81, opacity: 1, transform: "translate(5000px,600px) scale(.2)", easing: SAL }, { t: 21.5, opacity: 0, transform: "translate(5000px,600px) scale(4)" }]);
+
+  /* A: la planta se marchita y el lago se pone verde */
+  tl($("#plantA"), [{ t: 0, filter: "none", transform: "scaleY(1) rotate(0deg)", transformOrigin: "50% 100%" }, { t: 5.4, filter: "none", transform: "scaleY(1) rotate(0deg)", transformOrigin: "50% 100%", easing: SAL }, { t: 6.3, filter: "grayscale(1) brightness(.6)", transform: "scaleY(.55) rotate(-10deg)", transformOrigin: "50% 100%" }]);
+  tl($("#poolA"), [{ t: 0, backgroundColor: "#3ec8f0" }, { t: 6.2, backgroundColor: "#3ec8f0" }, { t: 7.0, backgroundColor: "#39ff3c" }]);
+
+  /* C: la araña */
+  tl($("#spider"), [{ t: 0, transform: "translateX(5960px)" }, { t: 12.6, transform: "translateX(5960px)" }, { t: 14.6, transform: "translateX(3300px)" }]);
+  /* C: filtro lanzado al agua */
+  tl($("#filtro"), [{ t: 0, opacity: 0, transform: "translate(-330px,-40px) scale(.5) rotate(0deg)" }, { t: 14.7, opacity: 0, transform: "translate(-330px,-40px) scale(.5) rotate(0deg)" }, { t: 14.71, opacity: 1, transform: "translate(-330px,-40px) scale(.5) rotate(0deg)", easing: "ease-out" }, { t: 15.0, opacity: 1, transform: "translate(-150px,-200px) scale(.6) rotate(180deg)", easing: "ease-in" }, { t: 15.3, opacity: 1, transform: "translate(0px,90px) scale(.6) rotate(360deg)" }, { t: 15.9, opacity: 1, transform: "translate(0px,90px) scale(.6) rotate(360deg)", easing: ENT }, { t: 16.2, opacity: 0, transform: "translate(0px,120px) scale(.3) rotate(360deg)" }]);
+  tl($("#poolC"), [{ t: 0, backgroundColor: "#39ff3c" }, { t: 15.4, backgroundColor: "#39ff3c" }, { t: 16.0, backgroundColor: "#3ec8f0" }]);
+  /* C: cerrar la alcantarilla, se va el humo y la lluvia */
+  tl($("#smokes"), [{ t: 0, opacity: 1 }, { t: 17.7, opacity: 1 }, { t: 18.3, opacity: 0 }]);
+  tl($("#rain"), [{ t: 0, opacity: 1 }, { t: 18.0, opacity: 1 }, { t: 18.8, opacity: 0 }]);
+  tl($("#bgC"), [{ t: 0, filter: "brightness(.85)" }, { t: 18.2, filter: "brightness(.85)" }, { t: 19.4, filter: "brightness(1.1) saturate(1.1)" }]);
+  tl($("#groundC"), [{ t: 0, filter: "saturate(.2) brightness(.65)" }, { t: 18.6, filter: "saturate(.2) brightness(.65)" }, { t: 19.6, filter: "saturate(1) brightness(1)" }]);
+  /* C: brota una planta y se apaga la máquina */
+  tl($("#plantC"), [{ t: 0, opacity: 0, transform: "scaleY(0)", transformOrigin: "50% 100%" }, { t: 19.15, opacity: 0, transform: "scaleY(0)", transformOrigin: "50% 100%" }, { t: 19.16, opacity: 1, transform: "scaleY(0)", transformOrigin: "50% 100%", easing: REB }, { t: 19.7, opacity: 1, transform: "scaleY(1)", transformOrigin: "50% 100%" }]);
+  tl($("#maq"), [{ t: 0, filter: "none" }, { t: 20.1, filter: "none" }, { t: 20.15, filter: "brightness(2)" }, { t: 20.3, filter: "grayscale(1) brightness(.55)" }]);
+
+  /* onomatopeyas */
+  var fx = $("#fx");
+  function sfx(txt, x, y, t0, t1, rot, color, size) {
+    var s = document.createElement("div"); s.className = "sfx"; s.textContent = txt;
+    s.style.left = x + "px"; s.style.top = y + "px"; if (color) s.style.color = color; if (size) s.style.fontSize = size + "px";
+    fx.appendChild(s);
+    var R = "rotate(" + rot + "deg)";
+    tl(s, [{ t: 0, opacity: 0, transform: R + " scale(.2)" }, { t: t0, opacity: 0, transform: R + " scale(.2)", easing: REB }, { t: t0 + 0.28, opacity: 1, transform: R + " scale(1.15)", easing: SAL }, { t: t0 + 0.5, opacity: 1, transform: R + " scale(1)" }, { t: Math.max(t0 + 0.51, t1 - 0.18), opacity: 1, transform: R + " scale(1.02)", easing: ENT }, { t: t1, opacity: 0, transform: R + " scale(1.15)" }]);
+  }
+  sfx("Zzz", 860, 470, 0.6, 2.9, -8, "#cfe9ff", 110);
+  sfx("¿¡!?", 820, 330, 3.0, 4.1, 8, null, 150);
+  sfx("?", 900, 360, 4.4, 5.3, -6, "#ffffff", 170);
+  sfx("…", 300, 470, 5.6, 6.6, 0, "#cfcfcf", 150);
+  sfx("BLUB", 1230, 620, 6.4, 7.4, -10, "#7dff7a");
+  sfx("¡!", 820, 340, 7.0, 7.9, 6, "#ff6a6a", 170);
+  sfx("BRRRM", 1380, 470, 11.2, 12.6, -6, "#ff9d6a", 120);
+  sfx("¡ÑAAAM!", 1200, 380, 12.8, 13.9, -8, "#ff6a6a");
+  sfx("¡FIUM!", 520, 160, 13.8, 14.6, 10, null, 130);
+  sfx("¡CLICK!", 700, 560, 15.25, 16.2, -8, "#bff3ff", 110);
+  sfx("¡CLONC!", 1180, 480, 17.5, 18.5, 8, null, 120);
+  sfx("¡BROTE!", 330, 450, 19.3, 20.2, -6, "#c9ff9a", 110);
+  sfx("¡ZZT!", 1600, 450, 20.1, 21.0, 10, "#cfcfcf", 110);
+  sfx("¡FIUUU!", 1100, 330, 22.9, 24.0, -8, null, 130);
+
+  /* iris de caricatura que se cierra sobre la alcantarilla */
+  var irisX = 5230 - 3840, irisY = 780;
+  var ir = $("#iris"); ir.style.left = irisX + "px"; ir.style.top = irisY + "px";
+  tl(ir, [{ t: 0, width: "4600px", height: "4600px" }, { t: 23.9, width: "4600px", height: "4600px", easing: SUAVE }, { t: 24.9, width: "180px", height: "180px" }, { t: 25.4, width: "180px", height: "180px", easing: ENT }, { t: 25.7, width: "0px", height: "0px" }]);
+
+  /* cierre: solo el logo y "Continuará…" */
+  tl($("#logo"), [{ t: 0, opacity: 0, transform: "scale(.3)" }, { t: 26.0, opacity: 0, transform: "scale(.3)", easing: REB }, { t: 26.5, opacity: 1, transform: "scale(1)" }]);
+  tl($("#cont"), [{ t: 0, opacity: 0, transform: "translateY(24px)" }, { t: 26.8, opacity: 0, transform: "translateY(24px)", easing: SAL }, { t: 27.2, opacity: 1, transform: "translateY(0)" }]);
+  tl($("#cSpider"), [{ t: 0, transform: "translateY(0)" }, { t: 27.8, transform: "translateY(0)", easing: SAL }, { t: 28.3, transform: "translateY(-130px)" }]);
+  sfx("?", 1700, 760, 28.4, 31.5, 8, "#ffffff", 120);
+
+  await document.fonts.ready;
+  await Promise.all(Array.prototype.map.call(document.images, function (im) { return im.decode ? im.decode().catch(function () {}) : null; }));
+  window.__seek = function (t) { document.getAnimations().forEach(function (a) { a.pause(); a.currentTime = t * 1000; }); };
+  if (location.hash === "#export") window.__seek(0);
+  window.__listo = true;
+})();
+</script>
+</body>
+</html>
